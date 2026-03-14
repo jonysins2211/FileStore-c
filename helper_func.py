@@ -25,9 +25,7 @@ async def create_masked_link(url):
 
     await db.store_masked_link(hash_id, url, "sha256")
 
-    return 
-    f"https://frantic-marijo-wickson-2faa9b4a.koyeb.app/{hash_id}"}"
-    
+    return f"https://frantic-marijo-wickson-2faa9b4a.koyeb.app/{hash_id}"
 # Ask Doubt on telegram @CodeflixSupport
 #
 # Copyright (C) 2025 by Codeflix-Bots@Github, < https://github.com/Codeflix-Bots >.
