@@ -19,7 +19,6 @@ from database.database import db
 async def create_masked_link(url):
 
     salt = secrets.token_hex(5)
-
     raw = url + salt
 
     hash_id = hashlib.sha256(raw.encode()).hexdigest()[:10]
@@ -28,7 +27,6 @@ async def create_masked_link(url):
 
     return f"https://movieloverzz-msk.vercel.app/{hash_id}"
     
-# Don't Remove Credit @CodeFlix_Bots, @rohit_1888
 # Ask Doubt on telegram @CodeflixSupport
 #
 # Copyright (C) 2025 by Codeflix-Bots@Github, < https://github.com/Codeflix-Bots >.
