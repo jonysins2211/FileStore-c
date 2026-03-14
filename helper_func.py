@@ -14,18 +14,20 @@ from pyrogram.errors import FloodWait
 from database.database import *
 import hashlib
 import secrets
+from database.database import db
 
 async def create_masked_link(url):
 
     salt = secrets.token_hex(5)
+
     raw = url + salt
 
     hash_id = hashlib.sha256(raw.encode()).hexdigest()[:10]
 
-    return f"https://yourdomain.com/{hash_id}"
+    await db.store_masked_link(hash_id, url, "sha256")
 
-
-
+    return f"https://movieloverzz-msk.vercel.app/{hash_id}"
+    
 # Don't Remove Credit @CodeFlix_Bots, @rohit_1888
 # Ask Doubt on telegram @CodeflixSupport
 #
