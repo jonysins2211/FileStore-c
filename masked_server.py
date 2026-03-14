@@ -19,4 +19,5 @@ async def redirect_link(request):
 app = web.Application()
 app.add_routes(routes)
 
-web.run_app(app, port=8080)
+def run_server():
+    web.run_app(app, host="0.0.0.0", port=8080)
