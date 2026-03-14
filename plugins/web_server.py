@@ -21,3 +21,10 @@ async def masked_redirect(request):
         return web.Response(text="Invalid link")
 
     raise web.HTTPFound(data["target"])
+
+
+# THIS PART WAS MISSING
+async def web_server():
+    app = web.Application()
+    app.add_routes(routes)
+    return app
