@@ -1,16 +1,10 @@
 #Codeflix_Botz
 #rohit_1888 on Tg
 
-import motor, asyncio
 import motor.motor_asyncio
 import time
-import pymongo, os
 from config import DB_URI, DB_NAME
 import logging
-from datetime import datetime, timedelta
-
-dbclient = pymongo.MongoClient(DB_URI)
-database = dbclient[DB_NAME]
 
 logging.basicConfig(level=logging.INFO)
 
@@ -24,12 +18,7 @@ default_verify = {
 def new_user(id):
     return {
         '_id': id,
-        'verify_status': {
-            'is_verified': False,
-            'verified_time': "",
-            'verify_token': "",
-            'link': ""
-        }
+        'verify_status': default_verify
     }
 
 class Rohit:
@@ -49,31 +38,32 @@ class Rohit:
         self.rqst_fsub_data = self.database['request_forcesub']
         self.rqst_fsub_Channel_data = self.database['request_forcesub_channel']
 
-        # ✅ NEW COLLECTION FOR MASKED LINKS
+        # masked links
         self.masked_links = self.database['masked_links']
 
 
-    # USER DATA
+    # ---------------- USER DATA ----------------
+
     async def present_user(self, user_id: int):
-        found = await self.user_data.find_one({'_id': user_id})
-        return bool(found)
+        user = await self.user_data.find_one({'_id': user_id})
+        return bool(user)
 
     async def add_user(self, user_id: int):
         await self.user_data.insert_one({'_id': user_id})
 
     async def full_userbase(self):
-        user_docs = await self.user_data.find().to_list(length=None)
-        user_ids = [doc['_id'] for doc in user_docs]
-        return user_ids
+        users = await self.user_data.find().to_list(length=None)
+        return [user['_id'] for user in users]
 
     async def del_user(self, user_id: int):
         await self.user_data.delete_one({'_id': user_id})
 
 
-    # ADMIN DATA
+    # ---------------- ADMIN DATA ----------------
+
     async def admin_exist(self, admin_id: int):
-        found = await self.admins_data.find_one({'_id': admin_id})
-        return bool(found)
+        admin = await self.admins_data.find_one({'_id': admin_id})
+        return bool(admin)
 
     async def add_admin(self, admin_id: int):
         if not await self.admin_exist(admin_id):
@@ -84,15 +74,15 @@ class Rohit:
             await self.admins_data.delete_one({'_id': admin_id})
 
     async def get_all_admins(self):
-        users_docs = await self.admins_data.find().to_list(length=None)
-        user_ids = [doc['_id'] for doc in users_docs]
-        return user_ids
+        admins = await self.admins_data.find().to_list(length=None)
+        return [admin['_id'] for admin in admins]
 
 
-    # BAN USER DATA
+    # ---------------- BAN USERS ----------------
+
     async def ban_user_exist(self, user_id: int):
-        found = await self.banned_user_data.find_one({'_id': user_id})
-        return bool(found)
+        user = await self.banned_user_data.find_one({'_id': user_id})
+        return bool(user)
 
     async def add_ban_user(self, user_id: int):
         if not await self.ban_user_exist(user_id):
@@ -103,12 +93,12 @@ class Rohit:
             await self.banned_user_data.delete_one({'_id': user_id})
 
     async def get_ban_users(self):
-        users_docs = await self.banned_user_data.find().to_list(length=None)
-        user_ids = [doc['_id'] for doc in users_docs]
-        return user_ids
+        users = await self.banned_user_data.find().to_list(length=None)
+        return [user['_id'] for user in users]
 
 
-    # AUTO DELETE TIMER SETTINGS
+    # ---------------- AUTO DELETE TIMER ----------------
+
     async def set_del_timer(self, value: int):
         existing = await self.del_timer_data.find_one({})
         if existing:
@@ -118,15 +108,14 @@ class Rohit:
 
     async def get_del_timer(self):
         data = await self.del_timer_data.find_one({})
-        if data:
-            return data.get('value', 600)
-        return 0
+        return data.get('value', 600) if data else 0
 
 
-    # CHANNEL MANAGEMENT
+    # ---------------- CHANNEL MANAGEMENT ----------------
+
     async def channel_exist(self, channel_id: int):
-        found = await self.fsub_data.find_one({'_id': channel_id})
-        return bool(found)
+        channel = await self.fsub_data.find_one({'_id': channel_id})
+        return bool(channel)
 
     async def add_channel(self, channel_id: int):
         if not await self.channel_exist(channel_id):
@@ -137,11 +126,39 @@ class Rohit:
             await self.fsub_data.delete_one({'_id': channel_id})
 
     async def show_channels(self):
-        channel_docs = await self.fsub_data.find().to_list(length=None)
-        return [doc['_id'] for doc in channel_docs]
+        channels = await self.fsub_data.find().to_list(length=None)
+        return [channel['_id'] for channel in channels]
 
 
-    # VERIFICATION MANAGEMENT
+    # ---------------- REQUEST FORCE SUB ----------------
+
+    async def req_user(self, channel_id: int, user_id: int):
+        await self.rqst_fsub_Channel_data.update_one(
+            {'_id': int(channel_id)},
+            {'$addToSet': {'user_ids': int(user_id)}},
+            upsert=True
+        )
+
+    async def del_req_user(self, channel_id: int, user_id: int):
+        await self.rqst_fsub_Channel_data.update_one(
+            {'_id': int(channel_id)},
+            {'$pull': {'user_ids': int(user_id)}}
+        )
+
+    async def req_user_exist(self, channel_id: int, user_id: int):
+        user = await self.rqst_fsub_Channel_data.find_one({
+            '_id': int(channel_id),
+            'user_ids': int(user_id)
+        })
+        return bool(user)
+
+    async def reqChannel_exist(self, channel_id: int):
+        channel_ids = await self.show_channels()
+        return channel_id in channel_ids
+
+
+    # ---------------- VERIFY SYSTEM ----------------
+
     async def db_verify_status(self, user_id):
         user = await self.user_data.find_one({'_id': user_id})
         if user:
@@ -163,7 +180,8 @@ class Rohit:
         await self.db_update_verify_status(user_id, current)
 
 
-    # VERIFY COUNT
+    # ---------------- VERIFY COUNT ----------------
+
     async def set_verify_count(self, user_id: int, count: int):
         await self.sex_data.update_one({'_id': user_id}, {'$set': {'verify_count': count}}, upsert=True)
 
@@ -180,7 +198,8 @@ class Rohit:
         return result[0]["total"] if result else 0
 
 
-    # ✅ MASKED LINK FUNCTIONS
+    # ---------------- MASKED LINKS ----------------
+
     async def store_masked_link(self, hash_id: str, target: str, algorithm: str):
         await self.masked_links.insert_one({
             "_id": hash_id,
