@@ -3,6 +3,13 @@ from database.database import db
 
 routes = web.RouteTableDef()
 
+
+@routes.get("/", allow_head=True)
+async def root_route_handler(request):
+    return web.json_response("Codeflix FileStore")
+
+
+# MASKED LINK REDIRECT
 @routes.get("/{hash_id}")
 async def masked_redirect(request):
 
