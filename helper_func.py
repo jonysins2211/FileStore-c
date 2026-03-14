@@ -12,6 +12,17 @@ from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
 from shortzy import Shortzy
 from pyrogram.errors import FloodWait
 from database.database import *
+import hashlib
+import secrets
+
+async def create_masked_link(url):
+
+    salt = secrets.token_hex(5)
+    raw = url + salt
+
+    hash_id = hashlib.sha256(raw.encode()).hexdigest()[:10]
+
+    return f"https://yourdomain.com/{hash_id}"
 
 
 
